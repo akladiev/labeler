@@ -45,6 +45,7 @@ const configureInput = (
     'sync-labels': boolean;
     dot: boolean;
     'pr-number': string[];
+    'non-matching-label': string;
   }>
 ) => {
   jest
@@ -376,6 +377,76 @@ describe('run', () => {
       expect(coreSetFailedMock).toHaveBeenCalledWith(error.message);
     }
   );
+
+  it('(with non-matching-label set, no other labels) adds label to PRs that have files not matching our glob patterns', async () => {
+    const nonMatchingLabel = 'non-matching'
+    configureInput({'non-matching-label': nonMatchingLabel});
+    usingLabelerConfigYaml('only_pdfs.yml');
+    mockGitHubResponseChangedFiles('foo.txt');
+
+    await run();
+
+    expect(setLabelsMock).toHaveBeenCalledTimes(1);
+
+    expect(setOutputSpy).toHaveBeenCalledWith(
+      'new-labels',
+      nonMatchingLabel
+    );
+    expect(setOutputSpy).toHaveBeenCalledWith(
+      'all-labels',
+      `manually-added,${nonMatchingLabel}`
+    );
+  });
+
+  it('(with non-matching-label set, with other labels) adds label to PRs that have files not matching our glob patterns', async () => {
+    const nonMatchingLabel = 'non-matching'
+    configureInput({'non-matching-label': nonMatchingLabel});
+    usingLabelerConfigYaml('only_pdfs.yml');
+    mockGitHubResponseChangedFiles('foo.txt', 'bar.pdf');
+
+    await run();
+
+    expect(setLabelsMock).toHaveBeenCalledTimes(1);
+
+    expect(setOutputSpy).toHaveBeenCalledWith(
+      'new-labels',
+      `touched-a-pdf-file,${nonMatchingLabel}`
+    );
+    expect(setOutputSpy).toHaveBeenCalledWith(
+      'all-labels',
+      `manually-added,touched-a-pdf-file,${nonMatchingLabel}`
+    );
+  });
+});
+
+it('(with on-matching-label set, sync-labels: true) it deletes preexisting non-matching label that no longer needed', async () => {
+  const nonMatchingLabel = 'non-matching'
+  configureInput({
+    'repo-token': 'foo',
+    'configuration-path': 'bar',
+    'sync-labels': true,
+    'non-matching-label': nonMatchingLabel
+  });
+
+  usingLabelerConfigYaml('only_pdfs.yml');
+  mockGitHubResponseChangedFiles('foo.pdf');
+  getPullMock.mockResolvedValue(<any>{
+    data: {
+      labels: [{name: 'touched-a-pdf-file'}, {name: nonMatchingLabel}]
+    }
+  });
+
+  await run();
+
+  expect(setLabelsMock).toHaveBeenCalledTimes(1);
+  expect(setLabelsMock).toHaveBeenCalledWith({
+    owner: 'monalisa',
+    repo: 'helloworld',
+    issue_number: 123,
+    labels: ['touched-a-pdf-file']
+  });
+  expect(setOutputSpy).toHaveBeenCalledWith('new-labels', '');
+  expect(setOutputSpy).toHaveBeenCalledWith('all-labels', 'touched-a-pdf-file');
 });
 
 function usingLabelerConfigYaml(fixtureName: keyof typeof yamlFixtures): void {
