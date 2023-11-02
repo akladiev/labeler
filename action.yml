@@ -21,6 +21,10 @@ inputs:
   pr-number:
     description: 'The pull request number(s)'
     required: false
+  non-matching-label:
+    description: 'If set, this label is set on PRs that changed the files not covered by patterns in labeler config'
+    default: ''
+    required: false
 
 outputs:
   new-labels:
