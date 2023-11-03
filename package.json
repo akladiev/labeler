@@ -1,5 +1,5 @@
 {
-  "name": "labeler",
+  "name": "custom-labeler",
   "version": "4.3.2",
   "description": "Labels pull requests by files altered",
   "main": "lib/main.js",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/labeler.git"
+    "url": "git+https://github.com/akladiev/labeler.git"
   },
   "keywords": [
     "github",
