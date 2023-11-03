@@ -331,6 +331,7 @@ function checkAny(
   if (!matches) {
     core.debug(`  "any" patterns did not match any files`);
   }
+  core.debug(`  Non-matching files by "any": ${nonMatchingFiles}`)
   return [matches, nonMatchingFiles];
 }
 
@@ -355,6 +356,7 @@ function checkAll(
   if (matches) {
     core.debug(`  "all" patterns matched all files`);
   }
+  core.debug(`  Non-matching files by "all": ${nonMatchingFiles}`)
   return [matches, nonMatchingFiles];
 }
 
@@ -393,6 +395,7 @@ function checkMatch(
   }
 
   const nonMatching: string[] = arrayIntersection(nonMatchingFiles);
+  core.debug(`  Non-matching files: ${nonMatchingFiles}`)
 
   return [matches, nonMatching];
 }
