@@ -62,6 +62,8 @@ export async function run() {
       const preexistingLabels = pullRequest.labels.map(l => l.name);
       const allLabels: Set<string> = new Set<string>(preexistingLabels);
 
+      let nonMatching: string[][] = [];
+
       for (const [label, globs] of labelGlobs.entries()) {
         core.debug(`processing ${label}`);
         const checkGlobsResult = checkGlobs(changedFiles, globs, dot);
@@ -74,13 +76,18 @@ export async function run() {
           allLabels.delete(label);
         }
 
-        core.debug(`non-matching label: ${nonMatchingLabel}`);
-        if (nonMatchingLabel && nonMatchingLabel.length > 0 && nonMatchingFiles.length) {
-          core.debug(`  adding ${nonMatchingLabel}`);
-          allLabels.add(nonMatchingLabel)
-        } else if (syncLabels) {
-          allLabels.delete(nonMatchingLabel);
-        }
+        nonMatching.push(nonMatchingFiles)
+      }
+
+      core.debug(`non-matching files for each label: ${nonMatching}`);
+      nonMatching = arrayIntersection(nonMatching)
+      core.debug(`intersection: ${nonMatching}`);
+
+      if (nonMatchingLabel && nonMatchingLabel.length > 0 && nonMatching.length) {
+        core.debug(`  adding ${nonMatchingLabel}`);
+        allLabels.add(nonMatchingLabel)
+      } else if (syncLabels) {
+        allLabels.delete(nonMatchingLabel);
       }
 
       const labelsToAdd = [...allLabels].slice(0, GITHUB_MAX_LABELS);
