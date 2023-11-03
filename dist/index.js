@@ -101,12 +101,14 @@ function run() {
                     else if (syncLabels) {
                         allLabels.delete(label);
                     }
+                    core.debug(`non-matching files for label ${label}: ${nonMatching}`);
                     nonMatching.push(nonMatchingFiles);
                 }
-                core.debug(`non-matching files for each label: ${nonMatching}`);
                 nonMatching = arrayIntersection(nonMatching);
-                core.debug(`intersection: ${nonMatching}`);
-                if (nonMatchingLabel && nonMatchingLabel.length > 0 && nonMatching.length) {
+                core.debug(`Files that didn't match any of the patterns: ${nonMatching}`);
+                if (nonMatchingLabel &&
+                    nonMatchingLabel.length > 0 &&
+                    nonMatching.length) {
                     core.debug(`  adding ${nonMatchingLabel}`);
                     allLabels.add(nonMatchingLabel);
                 }
@@ -269,12 +271,13 @@ function checkGlobs(changedFiles, globs, dot) {
         const matchesByGlob = matchResult[0];
         const nonMatchingFilesByGlob = matchResult[1];
         nonMatchingFilesForEachGlob.push(nonMatchingFilesByGlob);
+        core.debug(`    non-matching files for glob ${glob}: ${nonMatchingFilesByGlob}`);
         if (matchesByGlob) {
             matches = true;
         }
     }
     const nonMatchingFiles = arrayIntersection(nonMatchingFilesForEachGlob);
-    core.debug(`    non-matching files for each glob: ${nonMatchingFilesForEachGlob}`);
+    core.debug(`Non-matching files for all globs: ${nonMatchingFiles}`);
     return [matches, nonMatchingFiles];
 }
 exports.checkGlobs = checkGlobs;
@@ -308,7 +311,7 @@ function checkAny(changedFiles, globs, dot) {
     if (!matches) {
         core.debug(`  "any" patterns did not match any files`);
     }
-    core.debug(`  Non-matching files by "any": ${nonMatchingFiles}`);
+    core.debug(`  non-matching files by "any": ${nonMatchingFiles}`);
     return [matches, nonMatchingFiles];
 }
 // equivalent to "Array.every()" but expanded for debugging and clarity
@@ -327,7 +330,7 @@ function checkAll(changedFiles, globs, dot) {
     if (matches) {
         core.debug(`  "all" patterns matched all files`);
     }
-    core.debug(`  Non-matching files by "all": ${nonMatchingFiles}`);
+    core.debug(`  non-matching files by "all": ${nonMatchingFiles}`);
     return [matches, nonMatchingFiles];
 }
 function checkMatch(changedFiles, matchConfig, dot) {
@@ -350,7 +353,7 @@ function checkMatch(changedFiles, matchConfig, dot) {
         }
     }
     const nonMatching = arrayIntersection(nonMatchingFiles);
-    core.debug(`  Non-matching files: ${nonMatchingFiles}`);
+    core.debug(`Non-matching files by ${matchConfig}: ${nonMatchingFiles}`);
     return [matches, nonMatching];
 }
 function isListEqual(listA, listB) {

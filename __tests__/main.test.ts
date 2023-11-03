@@ -36,7 +36,9 @@ class NotFound extends Error {
 
 const yamlFixtures = {
   'only_pdfs.yml': fs.readFileSync('__tests__/fixtures/only_pdfs.yml'),
-  'multiple_patterns.yml': fs.readFileSync('__tests__/fixtures/multiple_patterns.yml')
+  'multiple_patterns.yml': fs.readFileSync(
+    '__tests__/fixtures/multiple_patterns.yml'
+  )
 };
 
 const configureInput = (
@@ -380,7 +382,7 @@ describe('run', () => {
   );
 
   it('(with non-matching-label set, no other labels) adds label to PRs that have files not matching our glob patterns', async () => {
-    const nonMatchingLabel = 'non-matching'
+    const nonMatchingLabel = 'non-matching';
     configureInput({'non-matching-label': nonMatchingLabel});
     usingLabelerConfigYaml('only_pdfs.yml');
     mockGitHubResponseChangedFiles('foo.txt');
@@ -389,10 +391,7 @@ describe('run', () => {
 
     expect(setLabelsMock).toHaveBeenCalledTimes(1);
 
-    expect(setOutputSpy).toHaveBeenCalledWith(
-      'new-labels',
-      nonMatchingLabel
-    );
+    expect(setOutputSpy).toHaveBeenCalledWith('new-labels', nonMatchingLabel);
     expect(setOutputSpy).toHaveBeenCalledWith(
       'all-labels',
       `manually-added,${nonMatchingLabel}`
@@ -400,7 +399,7 @@ describe('run', () => {
   });
 
   it('(with non-matching-label set, no other labels) does not add non-matching label to PRs where all files are matched', async () => {
-    const nonMatchingLabel = 'non-matching'
+    const nonMatchingLabel = 'non-matching';
     configureInput({'non-matching-label': nonMatchingLabel});
     usingLabelerConfigYaml('multiple_patterns.yml');
     mockGitHubResponseChangedFiles('foo.pdf');
@@ -421,7 +420,7 @@ describe('run', () => {
 });
 
 it('(with on-matching-label set, sync-labels: true) it deletes preexisting non-matching label that no longer needed', async () => {
-  const nonMatchingLabel = 'non-matching'
+  const nonMatchingLabel = 'non-matching';
   configureInput({
     'repo-token': 'foo',
     'configuration-path': 'bar',
