@@ -77,7 +77,6 @@ export async function run() {
         }
 
         nonMatching.push(nonMatchingFiles);
-        core.debug(`Non-matching files for label "${label}": ${nonMatching}`);
       }
 
       nonMatching = arrayIntersection(nonMatching);
@@ -309,7 +308,7 @@ export function checkGlobs(
   const nonMatchingFiles: string[] = arrayIntersection(
     nonMatchingFilesForEachGlob
   );
-  core.debug(`Non-matching files for all globs: ${nonMatchingFiles}`);
+  core.debug(`  non-matching files for all globs: ${nonMatchingFiles}`);
   return [matches, nonMatchingFiles];
 }
 
@@ -415,7 +414,7 @@ function checkMatch(
 
   const nonMatching: string[] = arrayIntersection(nonMatchingFiles);
   core.debug(
-    `Non-matching files by ${JSON.stringify(matchConfig)}: ${nonMatchingFiles}`
+    ` non-matching files by ${JSON.stringify(matchConfig)}: ${nonMatchingFiles}`
   );
 
   return [matches, nonMatching];
