@@ -74,7 +74,9 @@ export async function run() {
           allLabels.delete(label);
         }
 
+        core.debug(`non-matching label: ${nonMatchingLabel}`);
         if (nonMatchingLabel && nonMatchingLabel.length > 0 && nonMatchingFiles.length) {
+          core.debug(`  adding ${nonMatchingLabel}`);
           allLabels.add(nonMatchingLabel)
         } else if (syncLabels) {
           allLabels.delete(nonMatchingLabel);
@@ -291,6 +293,7 @@ export function checkGlobs(
   const nonMatchingFiles: string[] = arrayIntersection(
     nonMatchingFilesForEachGlob
   );
+  core.debug(`    non-matching files for each glob: ${nonMatchingFilesForEachGlob}`);
   return [matches, nonMatchingFiles];
 }
 
@@ -331,6 +334,7 @@ function checkAny(
   if (!matches) {
     core.debug(`  "any" patterns did not match any files`);
   }
+  core.debug(`  Non-matching files by "any": ${nonMatchingFiles}`)
   return [matches, nonMatchingFiles];
 }
 
@@ -355,6 +359,7 @@ function checkAll(
   if (matches) {
     core.debug(`  "all" patterns matched all files`);
   }
+  core.debug(`  Non-matching files by "all": ${nonMatchingFiles}`)
   return [matches, nonMatchingFiles];
 }
 
@@ -393,6 +398,7 @@ function checkMatch(
   }
 
   const nonMatching: string[] = arrayIntersection(nonMatchingFiles);
+  core.debug(`  Non-matching files: ${nonMatchingFiles}`)
 
   return [matches, nonMatching];
 }
