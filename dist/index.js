@@ -101,8 +101,8 @@ function run() {
                     else if (syncLabels) {
                         allLabels.delete(label);
                     }
-                    core.debug(`Non-matching files for label "${label}": ${nonMatching}`);
                     nonMatching.push(nonMatchingFiles);
+                    core.debug(`Non-matching files for label "${label}": ${nonMatching}`);
                 }
                 nonMatching = arrayIntersection(nonMatching);
                 core.debug(`Files that didn't match any of the patterns: ${nonMatching}`);
