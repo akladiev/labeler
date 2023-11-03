@@ -1,6 +1,6 @@
 name: 'Custom Labeler'
 description: 'Automatically label new pull requests based on the paths of files being changed'
-author: 'akladiev'
+author: 'GitHub'
 inputs:
   repo-token:
     description: 'The GitHub token used to manage labels'
