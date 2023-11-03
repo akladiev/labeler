@@ -35,7 +35,8 @@ class NotFound extends Error {
 }
 
 const yamlFixtures = {
-  'only_pdfs.yml': fs.readFileSync('__tests__/fixtures/only_pdfs.yml')
+  'only_pdfs.yml': fs.readFileSync('__tests__/fixtures/only_pdfs.yml'),
+  'multiple_patterns.yml': fs.readFileSync('__tests__/fixtures/multiple_patterns.yml')
 };
 
 const configureInput = (
@@ -398,11 +399,11 @@ describe('run', () => {
     );
   });
 
-  it('(with non-matching-label set, with other labels) adds label to PRs that have files not matching our glob patterns', async () => {
+  it('(with non-matching-label set, no other labels) does not add non-matching label to PRs where all files are matched', async () => {
     const nonMatchingLabel = 'non-matching'
     configureInput({'non-matching-label': nonMatchingLabel});
-    usingLabelerConfigYaml('only_pdfs.yml');
-    mockGitHubResponseChangedFiles('foo.txt', 'bar.pdf');
+    usingLabelerConfigYaml('multiple_patterns.yml');
+    mockGitHubResponseChangedFiles('foo.pdf');
 
     await run();
 
@@ -410,11 +411,11 @@ describe('run', () => {
 
     expect(setOutputSpy).toHaveBeenCalledWith(
       'new-labels',
-      `touched-a-pdf-file,${nonMatchingLabel}`
+      'touched-a-pdf-file'
     );
     expect(setOutputSpy).toHaveBeenCalledWith(
       'all-labels',
-      `manually-added,touched-a-pdf-file,${nonMatchingLabel}`
+      `manually-added,touched-a-pdf-file`
     );
   });
 });

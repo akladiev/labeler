@@ -1,0 +1,5 @@
+touched-a-pdf-file:
+  - any: ['*.pdf']
+
+touched-a-txt-file:
+  - any: ['*.txt']
