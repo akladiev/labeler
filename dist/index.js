@@ -90,7 +90,6 @@ function run() {
                 const preexistingLabels = pullRequest.labels.map(l => l.name);
                 const allLabels = new Set(preexistingLabels);
                 let nonMatching = [];
-                let nonMatching = [];
                 for (const [label, globs] of labelGlobs.entries()) {
                     core.debug(`processing ${label}`);
                     const checkGlobsResult = checkGlobs(changedFiles, globs, dot);
