@@ -101,7 +101,7 @@ function run() {
                     else if (syncLabels) {
                         allLabels.delete(label);
                     }
-                    core.debug(`non-matching files for label ${label}: ${nonMatching}`);
+                    core.debug(`Non-matching files for label "${label}": ${nonMatching}`);
                     nonMatching.push(nonMatchingFiles);
                 }
                 nonMatching = arrayIntersection(nonMatching);
@@ -271,7 +271,7 @@ function checkGlobs(changedFiles, globs, dot) {
         const matchesByGlob = matchResult[0];
         const nonMatchingFilesByGlob = matchResult[1];
         nonMatchingFilesForEachGlob.push(nonMatchingFilesByGlob);
-        core.debug(`    non-matching files for glob ${glob}: ${nonMatchingFilesByGlob}`);
+        core.debug(`    non-matching files for glob ${JSON.stringify(glob)}: ${nonMatchingFilesByGlob}`);
         if (matchesByGlob) {
             matches = true;
         }
@@ -353,7 +353,7 @@ function checkMatch(changedFiles, matchConfig, dot) {
         }
     }
     const nonMatching = arrayIntersection(nonMatchingFiles);
-    core.debug(`Non-matching files by ${matchConfig}: ${nonMatchingFiles}`);
+    core.debug(`Non-matching files by ${JSON.stringify(matchConfig)}: ${nonMatchingFiles}`);
     return [matches, nonMatching];
 }
 function isListEqual(listA, listB) {
