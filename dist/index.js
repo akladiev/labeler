@@ -58,6 +58,7 @@ function run() {
             const configPath = core.getInput('configuration-path', { required: true });
             const syncLabels = !!core.getInput('sync-labels');
             const dot = core.getBooleanInput('dot');
+            const nonMatchingLabel = core.getInput('non-matching-label');
             const prNumbers = getPrNumbers();
             if (!prNumbers.length) {
                 core.warning('Could not get pull request number(s), exiting');
@@ -90,11 +91,22 @@ function run() {
                 const allLabels = new Set(preexistingLabels);
                 for (const [label, globs] of labelGlobs.entries()) {
                     core.debug(`processing ${label}`);
-                    if (checkGlobs(changedFiles, globs, dot)) {
+                    const checkGlobsResult = checkGlobs(changedFiles, globs, dot);
+                    const matches = checkGlobsResult[0];
+                    const nonMatchingFiles = checkGlobsResult[1];
+                    if (matches) {
                         allLabels.add(label);
                     }
                     else if (syncLabels) {
                         allLabels.delete(label);
+                    }
+                    core.debug(`non-matching label: ${nonMatchingLabel}`);
+                    if (nonMatchingLabel && nonMatchingLabel.length > 0 && nonMatchingFiles.length) {
+                        core.debug(`  adding ${nonMatchingLabel}`);
+                        allLabels.add(nonMatchingLabel);
+                    }
+                    else if (syncLabels) {
+                        allLabels.delete(nonMatchingLabel);
                     }
                 }
                 const labelsToAdd = [...allLabels].slice(0, GITHUB_MAX_LABELS);
@@ -233,15 +245,33 @@ function toMatchConfig(config) {
 function printPattern(matcher) {
     return (matcher.negate ? '!' : '') + matcher.pattern;
 }
+function arrayIntersection(arrays) {
+    if (arrays.length === 0) {
+        return [];
+    }
+    let intersection = arrays[0];
+    for (let i = 1; i < arrays.length; i++) {
+        intersection = intersection.filter(element => arrays[i].includes(element));
+    }
+    return intersection;
+}
 function checkGlobs(changedFiles, globs, dot) {
+    let nonMatchingFilesForEachGlob = [];
+    let matches = false;
     for (const glob of globs) {
         core.debug(` checking pattern ${JSON.stringify(glob)}`);
         const matchConfig = toMatchConfig(glob);
-        if (checkMatch(changedFiles, matchConfig, dot)) {
-            return true;
+        const matchResult = checkMatch(changedFiles, matchConfig, dot);
+        const matchesByGlob = matchResult[0];
+        const nonMatchingFilesByGlob = matchResult[1];
+        nonMatchingFilesForEachGlob.push(nonMatchingFilesByGlob);
+        if (matchesByGlob) {
+            matches = true;
         }
     }
-    return false;
+    const nonMatchingFiles = arrayIntersection(nonMatchingFilesForEachGlob);
+    core.debug(`    non-matching files for each glob: ${nonMatchingFilesForEachGlob}`);
+    return [matches, nonMatchingFiles];
 }
 exports.checkGlobs = checkGlobs;
 function isMatch(changedFile, matchers) {
@@ -260,40 +290,64 @@ function isMatch(changedFile, matchers) {
 function checkAny(changedFiles, globs, dot) {
     const matchers = globs.map(g => new minimatch_1.Minimatch(g, { dot }));
     core.debug(`  checking "any" patterns`);
+    let nonMatchingFiles = [];
+    let matches = false;
     for (const changedFile of changedFiles) {
         if (isMatch(changedFile, matchers)) {
             core.debug(`  "any" patterns matched against ${changedFile}`);
-            return true;
+            matches = true;
+        }
+        else {
+            nonMatchingFiles.push(changedFile);
         }
     }
-    core.debug(`  "any" patterns did not match any files`);
-    return false;
+    if (!matches) {
+        core.debug(`  "any" patterns did not match any files`);
+    }
+    core.debug(`  Non-matching files by "any": ${nonMatchingFiles}`);
+    return [matches, nonMatchingFiles];
 }
 // equivalent to "Array.every()" but expanded for debugging and clarity
 function checkAll(changedFiles, globs, dot) {
     const matchers = globs.map(g => new minimatch_1.Minimatch(g, { dot }));
     core.debug(` checking "all" patterns`);
+    let nonMatchingFiles = [];
+    let matches = true;
     for (const changedFile of changedFiles) {
         if (!isMatch(changedFile, matchers)) {
             core.debug(`  "all" patterns did not match against ${changedFile}`);
-            return false;
+            matches = false;
+            nonMatchingFiles.push(changedFile);
         }
     }
-    core.debug(`  "all" patterns matched all files`);
-    return true;
+    if (matches) {
+        core.debug(`  "all" patterns matched all files`);
+    }
+    core.debug(`  Non-matching files by "all": ${nonMatchingFiles}`);
+    return [matches, nonMatchingFiles];
 }
 function checkMatch(changedFiles, matchConfig, dot) {
+    let matches = true;
+    let nonMatchingFiles = [];
     if (matchConfig.all !== undefined) {
-        if (!checkAll(changedFiles, matchConfig.all, dot)) {
-            return false;
+        const checkResult = checkAll(changedFiles, matchConfig.all, dot);
+        const matchesByAll = checkResult[0];
+        nonMatchingFiles.push(checkResult[1]);
+        if (!matchesByAll) {
+            matches = false;
         }
     }
-    if (matchConfig.any !== undefined) {
-        if (!checkAny(changedFiles, matchConfig.any, dot)) {
-            return false;
+    if (matches && matchConfig.any !== undefined) {
+        const checkResult = checkAny(changedFiles, matchConfig.any, dot);
+        const matchesByAny = checkResult[0];
+        nonMatchingFiles.push(checkResult[1]);
+        if (!matchesByAny) {
+            matches = false;
         }
     }
-    return true;
+    const nonMatching = arrayIntersection(nonMatchingFiles);
+    core.debug(`  Non-matching files: ${nonMatchingFiles}`);
+    return [matches, nonMatching];
 }
 function isListEqual(listA, listB) {
     return listA.length === listB.length && listA.every(el => listB.includes(el));
