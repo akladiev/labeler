@@ -233,23 +233,67 @@ async function fetchContent(
   return Buffer.from(response.data.content, response.data.encoding).toString();
 }
 
-function getLabelGlobMapFromObject(
-  configObject: any
-): Map<string, StringOrMatchConfig[]> {
-  const labelGlobs: Map<string, StringOrMatchConfig[]> = new Map();
+function getGlobsAsArray(label: string, configObject: any) {
   for (const label in configObject) {
     if (typeof configObject[label] === 'string') {
-      labelGlobs.set(label, [configObject[label]]);
+      return [configObject[label]];
     } else if (configObject[label] instanceof Array) {
-      labelGlobs.set(label, configObject[label]);
+      return configObject[label];
     } else {
       throw Error(
         `found unexpected type for label ${label} (should be string or array of globs)`
       );
     }
   }
+}
 
-  return labelGlobs;
+function resolveAnchorsLowLevel(entries: string[], configObject: any) {
+  let resolved: string[] = [];
+  for (const entry in entries) {
+    const isAnchor: boolean = entry[0] === '&';
+    if (isAnchor === true) {
+      const targetLabel = entry.substring(1);
+      // TODO: add recursive call of resolveAnchorsLowLevel?
+      const targetLabelGlobs = getGlobsAsArray(targetLabel, configObject);
+      resolved = resolved.concat(targetLabelGlobs);
+    }
+    else {
+      resolved.push(entry);
+    }
+  }
+  return resolved;
+}
+
+function resolveAnchors(labelGlobs: Map<string, StringOrMatchConfig[]>, configObject: any) {
+  let labelGlobsUnwrapped: Map<string, StringOrMatchConfig[]> = new Map();
+  for (const label in labelGlobs) {
+    let contentResolved: StringOrMatchConfig[] = [];
+    for (const content in labelGlobs[label]) {
+      const matchConfig: MatchConfig = toMatchConfig(content);
+      if (matchConfig.all !== undefined) {
+        const globsResolved: string[] = resolveAnchorsLowLevel(matchConfig.all, configObject);
+        matchConfig.all = globsResolved
+      }
+      if (matchConfig.any !== undefined) {
+        const globsResolved: string[] = resolveAnchorsLowLevel(matchConfig.any, configObject);
+        matchConfig.any = globsResolved
+      }
+      contentResolved.push(matchConfig)
+    }
+    labelGlobsUnwrapped.set(label, contentResolved);
+  }
+  return labelGlobsUnwrapped
+}
+
+function getLabelGlobMapFromObject(
+  configObject: any
+): Map<string, StringOrMatchConfig[]> {
+  const labelGlobs: Map<string, StringOrMatchConfig[]> = new Map();
+  for (const label in configObject) {
+    labelGlobs.set(label, getGlobsAsArray(label, configObject));
+  }
+  const labelGlobsUnwrapped = resolveAnchors(labelGlobs, configObject)
+  return labelGlobsUnwrapped;
 }
 
 function toMatchConfig(config: StringOrMatchConfig): MatchConfig {
